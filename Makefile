@@ -4,7 +4,7 @@ LDFLAGS = `sdl2-config --libs` -lGL -lGLEW -lGLU
 TARGET = four
 
 OUTDIR = dist
-FILES = main.c helpers.c helpers.h
+FILES = main.c helpers.c helpers.h window.h window.c configure.h
 
 WATCH_FILES = $(FILES) Makefile shaders
 
