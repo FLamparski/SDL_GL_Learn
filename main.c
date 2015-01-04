@@ -7,20 +7,12 @@
 #include <stdbool.h>
 
 #include "helpers.h"
+#include "glprogram.h"
+#include "window.h"
 
 bool init_sdl() {
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    return false;
-  }
-  return true;
+  return SDL_Init(SDL_INIT_EVERYTHING) < 0;
 }
-
-typedef struct _gl_prog {
-  GLuint prog_id;
-  GLint vertex_pos2d_location;
-  GLuint vbo;
-  GLuint ibo;
-} GLProgram;
 
 static GLProgram gl_program;
 
@@ -106,57 +98,7 @@ bool setup_scene() {
   return true;
 }
 
-typedef struct _win_ctx {
-  SDL_Window* window;
-  SDL_GLContext context;
-} WindowWithContext;
-
-WindowWithContext* init_window(int width, int height, int gl_major,
-    int gl_minor, const char* title) {
-  pdebug("Setting major opengl version to %d\n", gl_major);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl_major);
-  pdebug("Setting minor opengl version to %d\n", gl_minor);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, gl_minor);
-  pdebug("Setting core profile\n");
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-  pdebug("Setting double buffering\n");
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  pdebug("Setting 24-bit depth\n");
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-  pdebug("Creating a %dx%d window\n", width, height);
-  SDL_Window* window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-  if (!window) {
-    perr("Could not create a window. SDL error: %s.\n", SDL_GetError());
-    return NULL;
-  }
-
-  pdebug("Creating a context\n");
-  SDL_GLContext context = SDL_GL_CreateContext(window);
-  if (!context) {
-    SDL_DestroyWindow(window);
-    perr("Could not create an OpenGL context. SDL error: %s.\n", SDL_GetError());
-    return NULL;
-  } else {
-    pdebug("Initialising GLEW\n");
-    glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK) {
-      perr("Could not load GLEW: %s\n.", glewGetErrorString(glewError));
-    }
-  }
-
-  SDL_GL_SetSwapInterval(1);
-
-  WindowWithContext win_local = { .window = window, .context = context };
-  WindowWithContext* win = (WindowWithContext*) malloc(sizeof(WindowWithContext));
-  *win = win_local;
-
-  return win;
-}
-
-void render(WindowWithContext* window) {
+void render (WindowWithContext* window) {
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -183,13 +125,6 @@ void render(WindowWithContext* window) {
   glUseProgram(0);
 }
 
-void destroy_window(WindowWithContext* win) {
-  SDL_GL_DeleteContext(win->context);
-  SDL_DestroyWindow(win->window);
-  if (gl_program.prog_id) glDeleteProgram(gl_program.prog_id);
-  free(win);
-}
-
 void print_diagnostics() {
   printf(
       "OpenGL version: %s\n"
@@ -204,7 +139,7 @@ void print_diagnostics() {
 }
 int main() {
   int returncode = 0;
-  WindowWithContext* window = init_window(640, 480, 3, 1, "Four.c");
+  WindowWithContext* window = create_window(800, 600, "SDL+OpenGL Window");
   if (!window) {
     SDL_Quit();
     return 1;
@@ -216,23 +151,22 @@ int main() {
   printf("-------------------------------------\n");
 #endif
 
-  pdebug("Loading shaders\n");
   bool ok = init_opengl();
-  pinfo("Shaders: %s\n", ok ? "ok" : "not ok");
+  pinfo("Shader setup: %s\n", ok ? "ok" : "not ok");
   if (!ok) goto exit_main;
 
-  pdebug("Setting up the scene\n");
   ok = setup_scene();
-  pinfo("Scene: %s\n", ok ? "ok" : "not ok");
+  pinfo("Scene setup: %s\n", ok ? "ok" : "not ok");
   if (!ok) goto exit_main;
 
-  render(window);
-  SDL_Delay(2000);
+  while (!is_window_closed(window)) {
+    update_window(window, render);
+  }
 
 exit_main:
   pinfo("Tearing down the window + context at %p.\n", window);
   destroy_window(window);
-
+  if (gl_program.prog_id) glDeleteProgram(gl_program.prog_id);
   SDL_Quit();
   pdebug("Terminating.\n");
   return returncode;
