@@ -66,8 +66,8 @@ bool init_opengl() {
 }
 
 bool setup_scene() {
-  gl_program.vertex_pos2d_location = glGetAttribLocation(gl_program.prog_id, "LVertexPos2D");
-  if (gl_program.vertex_pos2d_location == -1) {
+  gl_program.vertex_pos3d_location = glGetAttribLocation(gl_program.prog_id, "pos_3d");
+  if (gl_program.vertex_pos3d_location == -1) {
     perr("Could not find LVertexPos2D GLSL variable.\n");
     return false;
   }
@@ -76,24 +76,28 @@ bool setup_scene() {
 
   // VBO data
   GLfloat vbo_data[] = {
-    -0.5f, -0.5f,
-     0.5f, -0.5f,
-     0.5f,  0.5f,
-    -0.5f,  0.5f
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f
   };
 
   // IBO data
-  GLuint index_data[] = { 0, 1, 2, 3 };
+  GLuint index_data[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
   // Create the VBO
   glGenBuffers(1, &gl_program.vbo);
   glBindBuffer(GL_ARRAY_BUFFER, gl_program.vbo);
-  glBufferData(GL_ARRAY_BUFFER, 2 * 4 * sizeof(GLfloat), vbo_data, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 2 * 8 * sizeof(GLfloat), vbo_data, GL_STATIC_DRAW);
 
   // Create the IBO
   glGenBuffers(1, &gl_program.ibo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_program.ibo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(GLuint), index_data, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 8 * sizeof(GLuint), index_data, GL_STATIC_DRAW);
 
   return true;
 }
@@ -113,15 +117,15 @@ void render (WindowWithContext* window) {
   glUniform1i(shader_window_height, sdl_window_height);
 
   glBindBuffer(GL_ARRAY_BUFFER, gl_program.vbo);
-  glEnableVertexAttribArray(gl_program.vertex_pos2d_location);
-  glVertexAttribPointer(gl_program.vertex_pos2d_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
+  glEnableVertexAttribArray(gl_program.vertex_pos3d_location);
+  glVertexAttribPointer(gl_program.vertex_pos3d_location, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_program.ibo);
   glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, NULL);
 
   SDL_GL_SwapWindow(window->window);
 
-  glDisableVertexAttribArray(gl_program.vertex_pos2d_location);
+  glDisableVertexAttribArray(gl_program.vertex_pos3d_location);
   glUseProgram(0);
 }
 

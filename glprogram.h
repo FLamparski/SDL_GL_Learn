@@ -4,7 +4,7 @@
 
 typedef struct _gl_prog {
   GLuint prog_id;
-  GLint vertex_pos2d_location;
+  GLint vertex_pos3d_location;
   GLuint vbo;
   GLuint ibo;
 } GLProgram;
