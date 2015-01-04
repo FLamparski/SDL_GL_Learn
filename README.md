@@ -46,4 +46,4 @@ a fairly long time to get there. In the meantime, I will be making:
     * [ ] Should be able to produce high-resolution renders (off-screen rendering)
     * [ ] Should be able to save and load generation parameters to files and have them deterministically produce planets
 
-[1] http://experilous.com/1/blog/post/procedural-planet-generation
+[1]: http://experilous.com/1/blog/post/procedural-planet-generation
